@@ -31,7 +31,7 @@
       legend: "Legend: ",
       listSep: "; ",
       noBikes: "Regular bikes not allowed",
-      bikeNote: "Underlined times: regular (non-folding) bikes are not allowed on board (weekdays 7:00–9:30 and 15:30–18:00). Folded bikes are always allowed.",
+      bikeNote: "Underlined times: regular (non-folding) bikes are not allowed on board (weekdays 7:00–9:30 and 15:30–18:00).",
       bikeRules: "REM bike rules",
       source:
         "Schedule data: Réseau express métropolitain {feed} (version {version}), {licence}, last checked {checked}. Times are scheduled departures and may change; check {rem} before travelling.",
@@ -43,14 +43,12 @@
       platform: "platform",
       platforms: "platforms",
       and: " & ",
-      minutesPast: "minutes past the hour",
       fromFeed: "Scheduled timetable from the REM GTFS data ({details}).",
       versionOf: "version of {date}",
       validUntil: "valid until {date}",
       scheduleOn: "{dates}: {schedule}.",
       noService: "No service on {dates}.",
-      afterMidnight: "Hours 00 and later at the bottom are the night following the day shown.",
-      checkLive: "Check real-time service status before travelling.",
+      freqNote: "» = trains every 4 minutes or less between the two times shown.",
       fileTo: "to",
       fileWest: "westbound",
     },
@@ -71,7 +69,7 @@
       legend: "Légende : ",
       listSep: " ; ",
       noBikes: "Vélos non pliants interdits",
-      bikeNote: "Heures soulignées : vélos non pliants interdits à bord (en semaine de 7 h à 9 h 30 et de 15 h 30 à 18 h). Les vélos pliés sont toujours permis.",
+      bikeNote: "Heures soulignées : vélos non pliants interdits à bord (en semaine de 7 h à 9 h 30 et de 15 h 30 à 18 h).",
       bikeRules: "règles du REM pour les vélos",
       source:
         "Données d'horaire : {feed} du Réseau express métropolitain (version {version}), {licence}, dernière vérification le {checked}. Les heures sont des départs planifiés et peuvent changer; consultez {rem} avant de partir.",
@@ -83,14 +81,12 @@
       platform: "quai",
       platforms: "quais",
       and: " et ",
-      minutesPast: "minutes après l'heure",
       fromFeed: "Horaire planifié tiré des données GTFS du REM ({details}).",
       versionOf: "version du {date}",
       validUntil: "valide jusqu'au {date}",
       scheduleOn: "{dates} : {schedule}.",
       noService: "Aucun service le {dates}.",
-      afterMidnight: "Les heures 0 h et suivantes, en bas du tableau, correspondent à la nuit qui suit la journée indiquée.",
-      checkLive: "Vérifiez l'état du service en temps réel avant de partir.",
+      freqNote: "» : départs aux 4 minutes ou moins entre les deux heures indiquées.",
       fileTo: "vers",
       fileWest: "ouest",
     },
@@ -446,8 +442,8 @@
     return lang() === "fr" ? (h % 24) + " h" : pad(h % 24);
   }
 
-  // Departures of one service grouped by hour of the service day
-  // (hours >= 24 are after midnight): { hours: [6, 7, ...], byHour: { 6: [[min, tag, banned], ...] } }
+  // Departures of one service grouped by hour of the service day (hours >= 24
+  // are after midnight): { hours: [6, 7, ...], byHour: { 6: [[min, tag, banned, minuteOfDay], ...] } }
   function groupByHour(dir, svcId) {
     var combined = dir.key === "W";
     var svc = serviceById(svcId);
@@ -460,15 +456,23 @@
         byHour[h] = [];
         hours.push(h);
       }
-      byHour[h].push([min % 60, combined ? entry[1] : null, bikeBanned(svc, min)]);
+      byHour[h].push([min % 60, combined ? entry[1] : null, bikeBanned(svc, min), min]);
     });
     return { hours: hours, byHour: byHour };
   }
 
   // "07" with its branch mark for combined views, underlined when regular
-  // bikes are not allowed. Records what was used in `used`.
+  // bikes are not allowed; or the » of a frequent-service run on the sheet.
+  // Records what was used in `used`.
   function minuteSpan(m, used) {
     var span = document.createElement("span");
+    if (m.freq) {
+      span.textContent = "»";
+      span.className = "freq" + (m.banned ? " no-bike" : "");
+      used.freq = true;
+      if (m.banned) used.noBike = true;
+      return span;
+    }
     var digits = document.createElement("span");
     digits.textContent = pad(m[0]);
     if (m[2]) {
@@ -547,7 +551,62 @@
       .replace(/^-|-$/g, "");
   }
 
-  function sheetFootnote(services, afterMidnight, used) {
+  // On the sheet, a run of FREQUENT.min or more departures at most FREQUENT.gap
+  // minutes apart shows as "first » last". Runs break at each hour, so every
+  // row shows its own first and last departure, and where the bike rule changes
+  // (7:00, 9:30, 15:30, 18:00), so each one is either fully underlined or not.
+  var FREQUENT = { gap: 4, min: 4 };
+
+  function compressFrequent(g) {
+    var byHour = {};
+    g.hours.forEach(function (h) {
+      var deps = g.byHour[h];
+      var out = (byHour[h] = []);
+      for (var i = 0; i < deps.length; ) {
+        var j = i;
+        while (j + 1 < deps.length && deps[j + 1][3] - deps[j][3] <= FREQUENT.gap && deps[j + 1][2] === deps[i][2]) j++;
+        if (j - i + 1 < FREQUENT.min) {
+          out.push(deps[i]);
+          i++;
+          continue;
+        }
+        out.push(deps[i], { freq: true, banned: deps[i][2] }, deps[j]);
+        i = j + 1;
+      }
+    });
+    return { hours: g.hours, byHour: byHour };
+  }
+
+  // Printable area inside the 1.5 cm margins, in CSS pixels: the width of A4 and
+  // the height of Letter, whichever is smaller, so the sheet fits on either.
+  var PAGE = { width: 680, height: 940 };
+
+  // Shrinks the sheet (CSS zoom) when it would not fit on one page. Zooming out
+  // also gives the table more room, so rows wrap less: search for the largest
+  // zoom that fits instead of scaling by the height ratio.
+  function fitSheet(sheet) {
+    sheet.style.cssText = "display: block; position: absolute; left: -10000px; top: 0";
+    var fits = function (zoom) {
+      sheet.style.zoom = zoom;
+      sheet.style.width = PAGE.width / zoom + "px"; // the page width, in zoomed units
+      return sheet.getBoundingClientRect().height <= PAGE.height;
+    };
+    var zoom = 1;
+    if (!fits(1)) {
+      var lo = 0.2;
+      var hi = 1;
+      for (var i = 0; i < 10; i++) {
+        var mid = (lo + hi) / 2;
+        if (fits(mid)) lo = mid;
+        else hi = mid;
+      }
+      zoom = lo;
+    }
+    sheet.style.cssText = "";
+    if (zoom < 1) sheet.style.zoom = zoom.toFixed(3);
+  }
+
+  function sheetFootnote(services, used) {
     var parts = [];
     var v = network.feed_version;
     var details = [];
@@ -565,11 +624,10 @@
       var none = s.removed.filter(function (d) { return added.indexOf(d) < 0; });
       if (none.length) parts.push(t("noService", { dates: dateList(none) }));
     });
-    if (afterMidnight) parts.push(t("afterMidnight"));
+    if (used.freq) parts.push(t("freqNote"));
     if (used.noBike) parts.push(t("bikeNote"));
     var legend = legendText(used);
     if (legend) parts.push(legend);
-    parts.push(t("checkLive"));
     return parts.join(" ");
   }
 
@@ -586,14 +644,11 @@
     if (dir.key === "W") fill(sub, t("sheetWest"), { code: bold(dir.code) });
     else fill(sub, t("sheetTo"), { dest: bold(dir.destination), code: dir.code });
     var plat = dir.platforms || [];
-    var extra = [];
-    if (plat.length) extra.push(t(plat.length > 1 ? "platforms" : "platform") + " " + plat.join(t("and")));
-    extra.push(t("minutesPast"));
-    sub.appendChild(document.createTextNode(" · " + extra.join(" · ")));
+    if (plat.length) sub.appendChild(document.createTextNode(" · " + t(plat.length > 1 ? "platforms" : "platform") + " " + plat.join(t("and"))));
     sheet.appendChild(sub);
 
     var services = network.services.filter(function (s) { return dir.timetable[s.id]; });
-    var groups = services.map(function (s) { return groupByHour(dir, s.id); });
+    var groups = services.map(function (s) { return compressFrequent(groupByHour(dir, s.id)); });
     var hours = [];
     groups.forEach(function (g) {
       g.hours.forEach(function (h) {
@@ -625,7 +680,7 @@
     thead.appendChild(head);
     table.appendChild(thead);
 
-    var used = { tags: {}, noBike: false };
+    var used = { tags: {}, noBike: false, freq: false };
     var tbody = document.createElement("tbody");
     hours.forEach(function (h) {
       var tr = document.createElement("tr");
@@ -650,8 +705,9 @@
 
     var note = document.createElement("p");
     note.className = "footnote";
-    note.textContent = sheetFootnote(services, hours.some(function (h) { return h >= 24; }), used);
+    note.textContent = sheetFootnote(services, used);
     sheet.appendChild(note);
+    fitSheet(sheet);
 
     return "REM_" + slug(data.name) + "_" + (dir.key === "W" ? t("fileWest") + "_" + slug(dir.code) : t("fileTo") + "_" + slug(dir.destination));
   }
