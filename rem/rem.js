@@ -273,7 +273,11 @@
     }).addTo(map);
 
     network.lines.forEach(function (line) {
-      L.polyline(line.coords, { color: line.color, weight: 5, opacity: 0.85 }).addTo(map);
+      L.polyline(line.coords, { color: "#fff", weight: 10, opacity: 1, interactive: false }).addTo(map);
+    });
+    // Lines on top of all the white casings, so shared track stays one clean line.
+    network.lines.forEach(function (line) {
+      L.polyline(line.coords, { color: line.color, weight: 6, opacity: 1, interactive: false }).addTo(map);
     });
 
     var bounds = [];
@@ -288,6 +292,13 @@
       m.on("click", function () {
         selectStation(st.id, true);
       });
+      // Labels are bound once, as permanent tooltips, and hidden with CSS when
+      // zoomed out: unbinding and rebinding them leaves Leaflet focus/blur
+      // listeners behind that close the label of a clicked station.
+      m.bindTooltip(st.name, { permanent: true, direction: "right", offset: [6, 0], className: "station-label" });
+      m.on("mouseover mouseout", function (e) {
+        m.getTooltip().getElement().classList.toggle("hover", e.type === "mouseover");
+      });
       markers[st.id] = { marker: m, name: st.name };
       bounds.push([st.lat, st.lon]);
     });
@@ -296,25 +307,17 @@
     map.on("zoomend", updateLabels);
   }
 
-  // Station names are always shown when zoomed in, on hover otherwise.
+  // Station names are always shown when zoomed in; zoomed out, only on hover
+  // and for the selected station.
   function updateLabels() {
-    var permanent = map.getZoom() >= 12;
-    Object.keys(markers).forEach(function (id) {
-      var m = markers[id].marker;
-      m.unbindTooltip();
-      m.bindTooltip(markers[id].name, {
-        permanent: permanent,
-        direction: "right",
-        offset: [6, 0],
-        className: permanent ? "station-label" : "",
-      });
-    });
+    map.getContainer().classList.toggle("zoomed-out", map.getZoom() < 12);
   }
 
   function highlightMarker() {
     Object.keys(markers).forEach(function (id) {
       var sel = id === state.station;
       markers[id].marker.setStyle({ fillColor: sel ? "#73a400" : "#fff", radius: sel ? 9 : 7 });
+      markers[id].marker.getTooltip().getElement().classList.toggle("selected", sel);
       if (sel) markers[id].marker.bringToFront();
     });
   }

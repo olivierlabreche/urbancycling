@@ -5,6 +5,16 @@
   border: 1px solid #999;
 }
 
+/* Pale, colourless city so the REM network stands out. */
+#map {
+  background: #f4f4f4;
+}
+
+#map .leaflet-tile-pane {
+  filter: grayscale(1) contrast(0.7) brightness(1.12);
+  opacity: 0.55;
+}
+
 @media (max-width: 600px) {
   #map {
     height: 360px;
@@ -23,6 +33,12 @@
 
 .station-label::before {
   display: none;
+}
+
+/* visibility, not display: Leaflet measures the label to center it on the
+   station, and a display: none label measures 0 and ends up too low. */
+#map.zoomed-out .station-label:not(.hover):not(.selected) {
+  visibility: hidden;
 }
 
 .buttons {
