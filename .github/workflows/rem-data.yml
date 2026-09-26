@@ -1,0 +1,37 @@
+name: Update REM timetable data
+
+on:
+  schedule:
+    - cron: "17 9 * * *" # daily, around 5 a.m. in Montreal
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rem-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build timetable data from the REM GTFS feed
+        run: python3 rem/tools/build_data.py
+
+      # network.json carries the date of the run, so there is a commit every
+      # day: it keeps the scheduled workflow alive and shows the runs work.
+      - name: Commit and push
+        run: |
+          git add rem/data
+          if git diff --cached --quiet; then
+            echo "No changes (already ran today)."
+            exit 0
+          fi
+          version=$(python3 -c "import json; print(json.load(open('rem/data/network.json'))['feed_version'])")
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "REM data $(date -u +%Y-%m-%d) (feed $version)"
+          git push

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html data-title-en="REM Timetables" data-title-fr="Horaires du REM">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="canonical" href="https://www.urbancycling.xyz/rem/" />
+    <script src="/lang.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
+    />
+    <link rel="stylesheet" href="rem.css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        $("#header").load("/header.html");
+        $("#footer").load("/footer.html");
+      });
+    </script>
+  </head>
+  <body>
+    <div id="header"></div>
+    <h2 lang="en">REM Timetables</h2>
+    <h2 lang="fr">Horaires du REM</h2>
+    <p lang="en">
+      Scheduled departures for every station of the Réseau express
+      métropolitain. Click a station on the map (or pick one from the list),
+      then choose a direction.
+    </p>
+    <p lang="fr">
+      Départs planifiés à chaque station du Réseau express métropolitain.
+      Cliquez sur une station sur la carte (ou choisissez-la dans la liste),
+      puis choisissez une direction.
+    </p>
+
+    <div id="map"></div>
+
+    <p>
+      <label for="station-select"
+        ><span lang="en">Station:</span><span lang="fr">Station :</span></label
+      >
+      <select id="station-select">
+        <option value=""></option>
+      </select>
+    </p>
+
+    <div id="panel" hidden>
+      <h3 id="station-name"></h3>
+      <div id="directions" class="buttons" role="group"></div>
+      <div id="services" class="buttons" role="group"></div>
+      <p>
+        <button type="button" id="export-pdf">
+          <span lang="en">Export PDF (whole week)</span
+          ><span lang="fr">Exporter en PDF (toute la semaine)</span>
+        </button>
+      </p>
+      <p id="service-notes" class="notes"></p>
+      <table id="timetable">
+        <thead>
+          <tr>
+            <th><span lang="en">Hour</span><span lang="fr">Heure</span></th>
+            <th><span lang="en">Minutes</span><span lang="fr">Minutes</span></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p id="legend" class="notes"></p>
+    </div>
+
+    <p id="source" class="notes"></p>
+    <div id="footer"></div>
+    <div id="print-sheet"></div>
+    <script src="rem.js"></script>
+  </body>
+</html>

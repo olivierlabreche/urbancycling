@@ -1,0 +1,212 @@
+#map {
+  width: 100%;
+  max-width: 800px;
+  height: 480px;
+  border: 1px solid #999;
+}
+
+@media (max-width: 600px) {
+  #map {
+    height: 360px;
+  }
+}
+
+.station-label {
+  background: none;
+  border: none;
+  box-shadow: none;
+  font-size: 11px;
+  font-weight: bold;
+  color: #333;
+  text-shadow: 0 0 3px #fff, 0 0 3px #fff;
+}
+
+.station-label::before {
+  display: none;
+}
+
+.buttons {
+  margin: 0.5em 0;
+}
+
+.buttons button {
+  margin: 0 0.3em 0.3em 0;
+  padding: 0.3em 0.7em;
+  border: 1px solid #555;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+
+.buttons button[aria-pressed="true"] {
+  background: #73a400;
+  border-color: #73a400;
+  color: #fff;
+}
+
+#timetable {
+  border-collapse: collapse;
+  max-width: 800px;
+  font-family: monospace;
+  font-size: 15px;
+}
+
+#timetable th,
+#timetable td {
+  border: 1px solid #bbb;
+  padding: 0.25em 0.6em;
+  text-align: left;
+  vertical-align: top;
+}
+
+#timetable td.hour {
+  font-weight: bold;
+  text-align: right;
+}
+
+#timetable td.minutes > span {
+  display: inline-block;
+  min-width: 2.6em;
+}
+
+#timetable tr.now td {
+  background: #eef6dc;
+}
+
+#timetable sup {
+  font-size: 10px;
+  color: #555;
+}
+
+#timetable sup.short {
+  color: #b00;
+}
+
+.notes {
+  font-size: 0.9em;
+  color: #444;
+}
+
+#export-pdf {
+  padding: 0.3em 0.7em;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Weekly sheet, only shown when printed through the "Export PDF" button. */
+#print-sheet {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: letter portrait;
+    margin: 1.5cm;
+  }
+
+  body.print-sheet > *:not(#print-sheet) {
+    display: none !important;
+  }
+
+  body.print-sheet #print-sheet {
+    display: block;
+  }
+}
+
+#print-sheet {
+  font-family: Helvetica, Arial, sans-serif;
+  color: #000;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+#print-sheet h1 {
+  font-size: 22pt;
+  margin: 0;
+}
+
+#print-sheet .subtitle {
+  font-size: 11pt;
+  color: #555;
+  margin: 0.2em 0 0.8em;
+}
+
+#print-sheet table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 10pt;
+}
+
+#print-sheet col.hour-col {
+  width: 3.5em;
+}
+
+#print-sheet th {
+  background: #73a400;
+  color: #fff;
+  padding: 0.4em;
+  border: 1px solid #fff;
+}
+
+#print-sheet td {
+  border: 1px solid #ccc;
+  padding: 0.3em 0.5em;
+}
+
+#print-sheet tbody tr:nth-child(even) td {
+  background: #f1f6e6;
+}
+
+#print-sheet td.hour {
+  font-weight: bold;
+  text-align: center;
+}
+
+#print-sheet td.minutes {
+  font-family: monospace;
+  font-weight: bold;
+}
+
+#print-sheet td.minutes div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+
+/* Combined views have up to ~16 departures an hour: smaller type, aligned grid. */
+#print-sheet.combined table {
+  font-size: 8.5pt;
+}
+
+#print-sheet.combined td {
+  padding: 0.2em 0.3em;
+}
+
+#print-sheet.combined td.minutes div {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(3em, 1fr));
+}
+
+#print-sheet sup {
+  font-size: 6pt;
+  color: #555;
+}
+
+#print-sheet sup.short {
+  color: #b00;
+}
+
+#print-sheet .footnote {
+  font-size: 8pt;
+  color: #555;
+  margin-top: 0.8em;
+}
+
+/* Departures when regular (non-folding) bikes are not allowed on board. */
+#timetable .no-bike,
+#print-sheet .no-bike {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
