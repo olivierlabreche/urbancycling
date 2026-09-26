@@ -1,7 +1,7 @@
 // Site language (en/fr). Pages carry both languages in elements marked
 // lang="en" / lang="fr"; this script hides the other one. The choice comes
-// from the selector in the header (saved in the browser), otherwise from the
-// browser language. Load it in <head>, before the body renders.
+// from the selector in the header (saved in the browser); French by default.
+// Load it in <head>, before the body renders.
 //
 // Page titles come from <html data-title-en="..." data-title-fr="...">.
 // Scripts can call siteLang.get() and listen to the "langchange" event.
@@ -16,7 +16,7 @@
   try {
     stored = localStorage.getItem(KEY);
   } catch (e) {}
-  var lang = stored === "en" || stored === "fr" ? stored : /^fr\b/i.test(navigator.language || "") ? "fr" : "en";
+  var lang = stored === "en" ? "en" : "fr";
 
   var style = document.createElement("style");
   style.textContent =
