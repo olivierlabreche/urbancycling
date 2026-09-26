@@ -174,29 +174,6 @@
   justify-content: space-around;
 }
 
-/* Combined views have up to ~16 departures an hour: smaller type, aligned grid. */
-#print-sheet.combined table {
-  font-size: 8.5pt;
-}
-
-#print-sheet.combined td {
-  padding: 0.2em 0.3em;
-}
-
-#print-sheet.combined td.minutes div {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(3em, 1fr));
-}
-
-#print-sheet sup {
-  font-size: 6pt;
-  color: #555;
-}
-
-#print-sheet sup.short {
-  color: #b00;
-}
-
 #print-sheet .footnote {
   font-size: 8pt;
   color: #555;

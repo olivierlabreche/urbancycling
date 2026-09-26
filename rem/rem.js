@@ -657,7 +657,6 @@
     });
     hours.sort(function (a, c) { return a - c; });
 
-    sheet.className = dir.key === "W" ? "combined" : "";
     var table = document.createElement("table");
     // Give each service column room in proportion to its busiest hour.
     var busiest = groups.map(function (g) {
@@ -692,8 +691,9 @@
         var cell = document.createElement("td");
         cell.className = "minutes";
         var box = document.createElement("div");
+        // No branch or short-trip marks on the sheet: it stays easier to read.
         (g.byHour[h] || []).forEach(function (m) {
-          box.appendChild(minuteSpan(m, used));
+          box.appendChild(minuteSpan(m.freq ? m : [m[0], null, m[2], m[3]], used));
         });
         cell.appendChild(box);
         tr.appendChild(cell);
